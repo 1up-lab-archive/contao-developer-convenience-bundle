@@ -13,7 +13,7 @@ Requirements
 -------------
 This bundle needs a working [mage](https://github.com/1up-lab/Magallanes) configuration  (`mage.yml`)
 
-###imageoptim
+### imageoptim
 
 The `dev:imageoptim` command also requires a set of node.js modules.
 Add them in your `package.json` file as shown below.
