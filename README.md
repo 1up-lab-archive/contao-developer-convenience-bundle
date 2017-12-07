@@ -36,11 +36,12 @@ Configuration
 You can configure the image-optimization in your app's config (`app/config/config.yml`).
 ```YAML
 developer_convenience:
-    jpeg:
-        quality: 85
-    png:
-        quality: 65-80
-        speed: 7
+    imageoptim:
+        jpeg:
+            quality: 85
+        png:
+            quality: 65-80
+            speed: 7
 ```
 >parameters are omittable. They default to above shown values.
 
