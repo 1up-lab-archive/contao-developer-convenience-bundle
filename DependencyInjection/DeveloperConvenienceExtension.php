@@ -12,6 +12,6 @@ class DeveloperConvenienceExtension extends Extension
         $configuration = new Configuration();
         $config = $this->processConfiguration($configuration, $configs);
 
-        $container->setParameter('developer_convenience.config', $config);
+        $container->setParameter('developer_convenience.imageoptim.config', $config);
     }
 }

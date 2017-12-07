@@ -145,9 +145,9 @@ class ImageOptimCommand extends ContainerAwareCommand
 
         $io->note($paths);
 
-        $configOpt = $this->getContainer()->getParameter('developer_convenience.config');
-        $jpegOpt = $configOpt['jpeg'];
-        $pngOpt = $configOpt['png'];
+        $configOpt = $this->getContainer()->getParameter('developer_convenience.imageoptim.config');
+        $jpegOpt = $configOpt['imageoptim']['jpeg'];
+        $pngOpt = $configOpt['imageoptim']['png'];
 
         foreach ($paths as $pathItem)
         {
