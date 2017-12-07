@@ -48,3 +48,10 @@ developer_convenience:
 
 `speed` parameter is only available for the png modules. This value ranges in between `[0-10]`, where `10` is the fastest (while decreasing quality).
 
+License
+-------
+
+This bundle is under the MIT license. See the complete license in the bundle:
+
+    Resources/meta/LICENSE
+
