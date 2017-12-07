@@ -152,7 +152,8 @@ class ImageOptimCommand extends ContainerAwareCommand
         foreach ($paths as $pathItem)
         {
             $this->runSubTask($io, 'Optimize JPEG & PNG images in directory "' . $pathItem . '"',
-                sprintf('node src/DeveloperConvenienceBundle/Resources/dev/app.js "%s" %s %s %s',
+                sprintf('node %s/../Resources/dev/app.js "%s" %s %s %s',
+                    __DIR__,
                     $pathItem,
                     $jpegOpt['quality'],
                     $pngOpt['quality'],
