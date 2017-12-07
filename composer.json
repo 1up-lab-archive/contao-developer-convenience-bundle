@@ -1,5 +1,5 @@
 {
-  "name": "oneup/developer-convenience-bundle",
+  "name": "oneup/contao-developer-convenience-bundle",
   "type": "symfony-bundle",
   "description": "Provides a set of tools to use while developing with contao",
   "keywords": ["contao", "sync", "synchronisation", "imagemin", "optimization", "environments"],
