@@ -1,0 +1,39 @@
+{
+  "name": "oneup/developer-convenience-bundle",
+  "type": "symfony-bundle",
+  "description": "Provides a set of tools to use while developing with contao",
+  "keywords": ["contao", "sync", "synchronisation", "imagemin", "optimization", "environments"],
+  "homepage": "http://1up.io",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Dominik Gander",
+      "email": "dominik.gander@1up.io",
+      "homepage": "http://1up.io",
+      "role": "Developer"
+    }
+  ],
+
+  "require": {
+    "php":">=5.4",
+    "symfony/framework-bundle": "^2.4|^3.0",
+    "symfony/yaml": "^3.4|^4.0",
+    "symfony/console": "^3.4|^4.0",
+    "symfony/process": "^3.4|^4.0",
+    "symfony/dependency-injection": "^3.4|^4.0",
+    "symfony/config": "^3.4|^4.0",
+    "symfony/http-kernel": "^3.4|^4.0"
+  },
+
+  "require-dev": {
+  },
+
+  "suggest": {
+  },
+
+  "autoload": {
+    "psr-0": { "Oneup\\DeveloperConvenienceBundle": "" }
+  },
+
+  "target-dir": "Oneup/DeveloperConvenienceBundle"
+}
