@@ -20,6 +20,7 @@ class SyncProjectCommand extends ContainerAwareCommand
             ->setName('dev:sync')
             ->setDescription('Synchronise Database and Files from a remote installation')
             ->addArgument('environment', InputArgument::REQUIRED, 'Where do you want to synchronise from?')
+            ->addArgument('timeout', InputArgument::OPTIONAL, 'What timeout should the commands have?')
         ;
     }
 
@@ -30,21 +31,24 @@ class SyncProjectCommand extends ContainerAwareCommand
         // Read configuration
         $config = $this->getConfigurationForEnvironment($input->getArgument('environment'));
 
+        $timeout = $input->getArgument('timeout');
+
         if (!$io->confirm('Are you sure to synchronise from a remote installation? This will overwrite your local data!', true)) {
             $io->error('Abort synchronisation.');
-        $io->newLine();
+            $io->newLine();
 
-        return;
-    }
+            return;
+        }
 
         $start = microtime(true);
 
         try {
             $this->prepareSync($config, $io);
-            $this->syncFilesystem($config, $io);
-            $this->syncDatabase($config, $io);
+            $this->syncFilesystem($config, $io, $timeout);
+            $this->syncDatabase($config, $io, $timeout);
         } catch (ProcessFailedException $exception) {
-            $io->error(sprintf("Synchronisation failed after %s seconds.\n\nMessage:\n%s\n\nCommand:\n%s",
+            $io->error(sprintf(
+                "Synchronisation failed after %s seconds.\n\nMessage:\n%s\n\nCommand:\n%s",
                 number_format(microtime(true) - $start, 2),
                 trim($exception->getProcess()->getErrorOutput()),
                 trim($exception->getProcess()->getCommandLine())
@@ -63,17 +67,17 @@ class SyncProjectCommand extends ContainerAwareCommand
         $this->runSubTask($io, 'Created temporary sync directory.', sprintf('mkdir -p %s', $config['tmp']));
     }
 
-    protected function syncFilesystem(array $config, SymfonyStyle $io)
+    protected function syncFilesystem(array $config, SymfonyStyle $io, int $timeout)
     {
         $io->title('Synchronising remote filesystem');
 
-        $this->runSubTask($io, 'Removed existing synced-files folder.', sprintf('rm -rf %s/files', $config['tmp']));
-        $this->runSubTask($io, 'Synchronised files to a new synced-files folder.', sprintf('scp -r %s@%s:%s/shared/files %s/files', $config['user'], $config['host'], $config['directory'], $config['tmp']));
-        $this->runSubTask($io, 'Removed existing files folder.', 'rm -rf files');
-        $this->runSubTask($io, 'Renamed synced-files folder to files.', sprintf('mv %s/files files', $config['tmp']));
+        $this->runSubTask($io, 'Removed existing synced-files folder.', sprintf('rm -rf %s/files', $config['tmp']), $timeout);
+        $this->runSubTask($io, 'Synchronised files to a new synced-files folder.', sprintf('scp -r %s@%s:%s/shared/files %s/files', $config['user'], $config['host'], $config['directory'], $config['tmp']), $timeout);
+        $this->runSubTask($io, 'Removed existing files folder.', 'rm -rf files', $timeout);
+        $this->runSubTask($io, 'Renamed synced-files folder to files.', sprintf('mv %s/files files', $config['tmp']), $timeout);
     }
 
-    protected function syncDatabase(array $config, SymfonyStyle $io)
+    protected function syncDatabase(array $config, SymfonyStyle $io, int $timeout)
     {
         $io->title('Synchronising remote database');
 
@@ -81,7 +85,8 @@ class SyncProjectCommand extends ContainerAwareCommand
         $localConfig = $config['db']['local'];
 
         $passwordMask = null === $remoteConfig['pass'] ? '' : sprintf('-p\"%s\"', $remoteConfig['pass']);
-        $this->runSubTask($io, 'Fetch a MySQL dump from the remote server.', sprintf('ssh %s@%s "mysqldump -h%s --port=%s -u%s %s %s" > %s/dump.sql',
+        $this->runSubTask($io, 'Fetch a MySQL dump from the remote server.', sprintf(
+            'ssh %s@%s "mysqldump -h%s --port=%s -u%s %s %s" > %s/dump.sql',
             $config['user'],
             $config['host'],
             $remoteConfig['host'],
@@ -90,19 +95,20 @@ class SyncProjectCommand extends ContainerAwareCommand
             $passwordMask,
             $remoteConfig['name'],
             $config['tmp']
-        ));
+        ), $timeout);
 
         $passwordMask = null === $localConfig['pass'] ? '' : sprintf('-p\"%s\"', $remoteConfig['pass']);
-        $this->runSubTask($io, 'Import dump from temporary file.', sprintf('mysql -h%s --port=%s -u%s %s %s < %s/dump.sql',
+        $this->runSubTask($io, 'Import dump from temporary file.', sprintf(
+            'mysql -h%s --port=%s -u%s %s %s < %s/dump.sql',
             $localConfig['host'],
             $localConfig['port'],
             $localConfig['user'],
             $passwordMask,
             $localConfig['name'],
             $config['tmp']
-        ));
+        ), $timeout);
 
-        $this->runSubTask($io, 'Clean up temporary files.', sprintf('rm %s/dump.sql', $config['tmp']));
+        $this->runSubTask($io, 'Clean up temporary files.', sprintf('rm %s/dump.sql', $config['tmp']), $timeout);
     }
 
     /**
@@ -136,7 +142,6 @@ class SyncProjectCommand extends ContainerAwareCommand
 
             /** @var array|string $command */
             foreach ($envConfig[$stage] as $command) {
-
                 $commandName = $command;
                 if (is_array($command)) {
                     $commandName = array_keys($command)[0];
@@ -191,9 +196,9 @@ class SyncProjectCommand extends ContainerAwareCommand
         ];
     }
 
-    private function runSubTask(SymfonyStyle $io, string $text, string $task)
+    private function runSubTask(SymfonyStyle $io, string $text, string $task, int $timeout = 60)
     {
-        $process = new Process($task);
+        $process = new Process($task, null, null, null, $timeout);
         $process->run();
 
         $success = $process->isSuccessful();
