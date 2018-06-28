@@ -51,7 +51,8 @@ class ImageOptimCommand extends ContainerAwareCommand
             $this->resyncFilesOnRemote($config, $io);
             $this->removeTemporaryFolder($config, $io);
         } catch (ProcessFailedException $exception) {
-            $io->error(sprintf("Optimization failed after %s seconds.\n\nMessage:\n%s\n\nCommand:\n%s",
+            $io->error(sprintf(
+                "Optimization failed after %s seconds.\n\nMessage:\n%s\n\nCommand:\n%s",
                 number_format(microtime(true) - $start, 2),
                 trim($exception->getProcess()->getErrorOutput()),
                 trim($exception->getProcess()->getCommandLine())
@@ -68,20 +69,19 @@ class ImageOptimCommand extends ContainerAwareCommand
     protected function checkForImagemin(SymfonyStyle $io)
     {
         $projectDir = $this->getContainer()->getParameter('kernel.project_dir');
-        if(!file_exists($projectDir.'/node_modules/imagemin')) {
+        if (!file_exists($projectDir.'/node_modules/imagemin')) {
             $io->error('Imagemin node-modules not found. Please see readme.md for detailed information.');
             $io->newLine();
 
             die();
         }
-
     }
 
     protected function removeTemporaryFolder(array $config, SymfonyStyle $io)
     {
         $imgOptFolder = $this->getContainer()->getParameter('kernel.project_dir') . '/var/imgOpt';
 
-        if(file_exists($imgOptFolder)) {
+        if (file_exists($imgOptFolder)) {
             $this->runSubTask($io, 'Removed temporary folder.', sprintf('rm -rf %s', $imgOptFolder));
         }
     }
@@ -90,43 +90,58 @@ class ImageOptimCommand extends ContainerAwareCommand
     {
         $imgOptFolder = $this->getContainer()->getParameter('kernel.project_dir') . '/var/imgOpt';
 
-        if(file_exists($config['tmp'])) {
+        if (file_exists($config['tmp'])) {
             $this->runSubTask($io, 'Removed previous folder.', sprintf('rm -rf %s', $config['tmp']));
         }
 
-        if(!file_exists($imgOptFolder)) {
+        if (!file_exists($imgOptFolder)) {
             $this->runSubTask($io, 'Created temporary folder.', sprintf('mkdir  %s', $imgOptFolder));
         }
 
-        $this->runSubTask($io, 'Remote files have been downloaded and are ready to be optimized!',
-            sprintf('scp -r %s@%s:%s/shared/files %s',
+        $this->runSubTask(
+            $io,
+            'Remote files have been downloaded and are ready to be optimized!',
+            sprintf(
+                'scp -r %s@%s:%s/shared/files %s',
                 $config['user'],
                 $config['host'],
                 $config['directory'],
-                $config['tmp']));
+                $config['tmp']
+            )
+        );
     }
 
     protected function createRemoteBackup(array $config, SymfonyStyle $io)
     {
         $timestamp = time();
 
-        $this->runSubTask($io, 'Remote backup has been created.',
-            sprintf("ssh %s@%s 'cp -r %s/shared/files %s/shared/backup_%s'",
+        $this->runSubTask(
+            $io,
+            'Remote backup has been created.',
+            sprintf(
+                "ssh %s@%s 'cp -r %s/shared/files %s/shared/backup_%s'",
                 $config['user'],
                 $config['host'],
                 $config['directory'],
                 $config['directory'],
-                $timestamp));
+                $timestamp
+            )
+        );
     }
 
     protected function moveNewFilesToRemote($config, $io)
     {
-        $this->runSubTask($io, 'Files have been uploaded.',
-            sprintf('scp -r %s %s@%s:%s/shared',
+        $this->runSubTask(
+            $io,
+            'Files have been uploaded.',
+            sprintf(
+                'scp -r %s %s@%s:%s/shared',
                 $config['tmp'],
                 $config['user'],
                 $config['host'],
-                $config['directory']));
+                $config['directory']
+            )
+        );
     }
 
     protected function optimizeImages(SymfonyStyle $io)
@@ -149,26 +164,35 @@ class ImageOptimCommand extends ContainerAwareCommand
         $jpegOpt = $configOpt['imageoptim']['jpeg'];
         $pngOpt = $configOpt['imageoptim']['png'];
 
-        foreach ($paths as $pathItem)
-        {
-            $this->runSubTask($io, 'Optimize JPEG & PNG images in directory "' . $pathItem . '"',
-                sprintf('node %s/../Resources/dev/app.js "%s" %s %s %s',
+        foreach ($paths as $pathItem) {
+            $this->runSubTask(
+                $io,
+                'Optimize JPEG & PNG images in directory "' . $pathItem . '"',
+                sprintf(
+                    'node %s/../Resources/dev/app.js "%s" %s %s %s',
                     __DIR__,
                     $pathItem,
                     $jpegOpt['quality'],
                     $pngOpt['quality'],
-                    $pngOpt['speed']));
+                    $pngOpt['speed']
+                )
+            );
         }
     }
 
     protected function resyncFilesOnRemote(array $config, SymfonyStyle $io)
     {
-        $this->runSubTask($io, 'Remote filesync invoked.',
-            sprintf("ssh %s@%s 'cd %s/current/; %s contao:filesync'",
+        $this->runSubTask(
+            $io,
+            'Remote filesync invoked.',
+            sprintf(
+                "ssh %s@%s 'cd %s/current/; %s contao:filesync'",
                 $config['user'],
                 $config['host'],
                 $config['directory'],
-                $config['console']));
+                $config['console']
+            )
+        );
     }
 
     private function getConfigurationForEnvironment(string $environment)
@@ -199,7 +223,6 @@ class ImageOptimCommand extends ContainerAwareCommand
 
             /** @var array|string $command */
             foreach ($envConfig[$stage] as $command) {
-
                 $commandName = $command;
                 if (is_array($command)) {
                     $commandName = array_keys($command)[0];
