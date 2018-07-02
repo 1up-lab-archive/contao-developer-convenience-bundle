@@ -42,6 +42,10 @@ class SyncProjectCommand extends ContainerAwareCommand
 
         $start = microtime(true);
 
+        if (!$timeout) {
+            $timeout = 60;
+        }
+
         try {
             $this->prepareSync($config, $io);
             $this->syncFilesystem($config, $io, $timeout);
