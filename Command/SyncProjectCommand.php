@@ -8,6 +8,8 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\DependencyInjection\EnvVarProcessor;
+use Symfony\Component\Dotenv\Dotenv;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Yaml\Yaml;
@@ -164,39 +166,80 @@ class SyncProjectCommand extends ContainerAwareCommand
             }
         }
 
+        $dbConfig = $this->getDatabaseConfig($parametersEnv, $this->hasEnvFileSupport($parametersEnv));
+
         return [
             'host' => $envConfig['hosts'][0],
             'user' => $envConfig['user'],
             'directory' => rtrim($envConfig['host_path'], '/'),
             'tmp' => $syncDir,
             'db' => [
-                'remote' => $this->getDatabaseConfig($parametersEnv),
-                'local' => $this->getDatabaseConfig('local')
+                'remote' => $this->getDatabaseConfig($parametersEnv, $this->hasEnvFileSupport($parametersEnv)),
+                'local' => $this->getDatabaseConfig('local', $this->hasEnvFileSupport('local'))
             ]
         ];
     }
 
-    private function getDatabaseConfig($environment = 'local')
+    private function hasEnvFileSupport($env = 'local')
+    {
+        if ($env === 'local') {
+            return file_exists('.env');
+        }
+
+        return file_exists(sprintf('.env.%s.dist', $env));
+    }
+
+    private function getDatabaseConfig($environment, $hasEnvFileSupport)
     {
         $rootDir = $this->getContainer()->getParameter('kernel.root_dir');
 
+        if (!$hasEnvFileSupport) {
+            $file = $environment === 'local' ?
+                sprintf('%s/config/parameters.yml', $rootDir):
+                sprintf('%s/config/parameters.%s.yml.dist', $rootDir, $environment)
+            ;
+
+            if (!file_exists($file)) {
+                throw new LogicException(sprintf('No parameters file for environment "%s" found.', $environment));
+            }
+
+            $config = Yaml::parse(file_get_contents($file));
+
+            return [
+                'host' => $config['parameters']['database_host'],
+                'user' => $config['parameters']['database_user'],
+                'pass' => $config['parameters']['database_password'],
+                'port' => $config['parameters']['database_port'],
+                'name' => $config['parameters']['database_name']
+            ];
+        }
+
+        // Env-File Support
         $file = $environment === 'local' ?
-            sprintf('%s/config/parameters.yml', $rootDir):
-            sprintf('%s/config/parameters.%s.yml.dist', $rootDir, $environment)
+            sprintf('%s/../.env', $rootDir):
+            sprintf('%s/../.env.%s.dist', $rootDir, $environment)
         ;
 
         if (!file_exists($file)) {
-            throw new LogicException(sprintf('No parameters file for environment "%s" found.', $environment));
+            throw new LogicException(sprintf('No .env file for environment "%s" found.', $environment));
         }
 
-        $config = Yaml::parse(file_get_contents($file));
+        $dotenv = new Dotenv();
+        $dotenv->load($file);
+
+        $url = getenv('DATABASE_URL');
+
+        $components = parse_url($url);
+
+        $dotenv = new Dotenv();
+        $dotenv->load($rootDir . '/../.env');
 
         return [
-            'host' => $config['parameters']['database_host'],
-            'user' => $config['parameters']['database_user'],
-            'pass' => $config['parameters']['database_password'],
-            'port' => $config['parameters']['database_port'],
-            'name' => $config['parameters']['database_name']
+            'host' => $components['host'],
+            'user' => $components['user'],
+            'pass' => $components['pass'],
+            'port' => $components['port'],
+            'name' => ltrim($components['path'], '/')
         ];
     }
 
