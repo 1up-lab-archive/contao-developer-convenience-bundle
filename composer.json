@@ -15,8 +15,8 @@
   ],
 
   "require": {
-    "php":">=5.4",
-    "symfony/framework-bundle": "^3.0",
+    "php":">=7.2",
+    "symfony/framework-bundle": "^3.0|^4.0",
     "symfony/yaml": "^3.3|^4.0",
     "symfony/console": "^3.3|^4.0",
     "symfony/dotenv": "^3.4|^4.0",
@@ -24,12 +24,6 @@
     "symfony/dependency-injection": "^3.3|^4.0",
     "symfony/config": "^3.3|^4.0",
     "symfony/http-kernel": "^3.3|^4.0"
-  },
-
-  "require-dev": {
-  },
-
-  "suggest": {
   },
 
   "autoload": {
