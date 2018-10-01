@@ -1,0 +1,10 @@
+services:
+    oneup.dca.command.image-optim:
+        class: Oneup\DeveloperConvenienceBundle\Command\ImageOptimCommand
+        tags:
+            - { name: 'console.command' }
+
+    oneup.dca.command.sync-project:
+        class: Oneup\DeveloperConvenienceBundle\Command\SyncProjectCommand
+        tags:
+            - { name: 'console.command' }
