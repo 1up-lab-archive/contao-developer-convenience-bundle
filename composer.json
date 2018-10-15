@@ -32,12 +32,10 @@
   },
 
   "autoload": {
-    "psr-0": { "Oneup\\DeveloperConvenienceBundle": "" }
+    "psr-4": { "Oneup\\DeveloperConvenienceBundle\\": "" }
   },
 
   "config": {
     "sort-packages": true
-  },
-
-  "target-dir": "Oneup/DeveloperConvenienceBundle"
+  }
 }
