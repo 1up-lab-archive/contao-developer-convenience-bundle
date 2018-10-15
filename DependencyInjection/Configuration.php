@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Oneup\DeveloperConvenienceBundle\DependencyInjection;
 
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
@@ -34,7 +36,6 @@ class Configuration implements ConfigurationInterface
                 ->end()
             ->end()
         ;
-
 
         return $treeBuilder;
     }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Oneup\DeveloperConvenienceBundle\Command;
 
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
@@ -8,7 +10,6 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
-use Symfony\Component\DependencyInjection\EnvVarProcessor;
 use Symfony\Component\Dotenv\Dotenv;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
@@ -16,7 +17,7 @@ use Symfony\Component\Yaml\Yaml;
 
 class SyncProjectCommand extends ContainerAwareCommand
 {
-    public function configure()
+    public function configure(): void
     {
         $this
             ->setName('dev:sync')
@@ -26,7 +27,7 @@ class SyncProjectCommand extends ContainerAwareCommand
         ;
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): void
     {
         $io = new SymfonyStyle($input, $output);
 
@@ -61,6 +62,7 @@ class SyncProjectCommand extends ContainerAwareCommand
             ));
 
             $io->newLine();
+
             return;
         }
 
@@ -68,12 +70,12 @@ class SyncProjectCommand extends ContainerAwareCommand
         $io->newLine();
     }
 
-    protected function prepareSync(array $config, SymfonyStyle $io)
+    protected function prepareSync(array $config, SymfonyStyle $io): void
     {
         $this->runSubTask($io, 'Created temporary sync directory.', sprintf('mkdir -p %s', $config['tmp']));
     }
 
-    protected function syncFilesystem(array $config, SymfonyStyle $io, int $timeout)
+    protected function syncFilesystem(array $config, SymfonyStyle $io, int $timeout): void
     {
         $io->title('Synchronising remote filesystem');
 
@@ -83,7 +85,7 @@ class SyncProjectCommand extends ContainerAwareCommand
         $this->runSubTask($io, 'Renamed synced-files folder to files.', sprintf('mv %s/files files', $config['tmp']), $timeout);
     }
 
-    protected function syncDatabase(array $config, SymfonyStyle $io, int $timeout)
+    protected function syncDatabase(array $config, SymfonyStyle $io, int $timeout): void
     {
         $io->title('Synchronising remote database');
 
@@ -119,6 +121,7 @@ class SyncProjectCommand extends ContainerAwareCommand
 
     /**
      * @param string $environment
+     *
      * @return array
      */
     private function getConfigurationForEnvironment(string $environment)
@@ -149,7 +152,7 @@ class SyncProjectCommand extends ContainerAwareCommand
             /** @var array|string $command */
             foreach ($envConfig[$stage] as $command) {
                 $commandName = $command;
-                if (is_array($command)) {
+                if (\is_array($command)) {
                     $commandName = array_keys($command)[0];
                 }
 
@@ -157,7 +160,7 @@ class SyncProjectCommand extends ContainerAwareCommand
                     continue;
                 }
 
-                if (is_array($command) && is_array($command['custom/copy-parameters']) && array_key_exists('env', $command['custom/copy-parameters'])) {
+                if (\is_array($command) && \is_array($command['custom/copy-parameters']) && array_key_exists('env', $command['custom/copy-parameters'])) {
                     $parametersEnv = $command['custom/copy-parameters']['env'];
                     break 2;
                 }
@@ -175,14 +178,14 @@ class SyncProjectCommand extends ContainerAwareCommand
             'tmp' => $syncDir,
             'db' => [
                 'remote' => $this->getDatabaseConfig($parametersEnv, $this->hasEnvFileSupport($parametersEnv)),
-                'local' => $this->getDatabaseConfig('local', $this->hasEnvFileSupport('local'))
-            ]
+                'local' => $this->getDatabaseConfig('local', $this->hasEnvFileSupport('local')),
+            ],
         ];
     }
 
     private function hasEnvFileSupport($env = 'local')
     {
-        if ($env === 'local') {
+        if ('local' === $env) {
             return file_exists('.env');
         }
 
@@ -194,8 +197,8 @@ class SyncProjectCommand extends ContainerAwareCommand
         $rootDir = $this->getContainer()->getParameter('kernel.root_dir');
 
         if (!$hasEnvFileSupport) {
-            $file = $environment === 'local' ?
-                sprintf('%s/config/parameters.yml', $rootDir):
+            $file = 'local' === $environment ?
+                sprintf('%s/config/parameters.yml', $rootDir) :
                 sprintf('%s/config/parameters.%s.yml.dist', $rootDir, $environment)
             ;
 
@@ -210,13 +213,13 @@ class SyncProjectCommand extends ContainerAwareCommand
                 'user' => $config['parameters']['database_user'],
                 'pass' => $config['parameters']['database_password'],
                 'port' => $config['parameters']['database_port'],
-                'name' => $config['parameters']['database_name']
+                'name' => $config['parameters']['database_name'],
             ];
         }
 
         // Env-File Support
-        $file = $environment === 'local' ?
-            sprintf('%s/../.env', $rootDir):
+        $file = 'local' === $environment ?
+            sprintf('%s/../.env', $rootDir) :
             sprintf('%s/../.env.%s.dist', $rootDir, $environment)
         ;
 
@@ -232,18 +235,18 @@ class SyncProjectCommand extends ContainerAwareCommand
         $components = parse_url($url);
 
         $dotenv = new Dotenv();
-        $dotenv->load($rootDir . '/../.env');
+        $dotenv->load($rootDir.'/../.env');
 
         return [
             'host' => $components['host'],
             'user' => $components['user'],
             'pass' => $components['pass'],
             'port' => $components['port'],
-            'name' => ltrim($components['path'], '/')
+            'name' => ltrim($components['path'], '/'),
         ];
     }
 
-    private function runSubTask(SymfonyStyle $io, string $text, string $task, int $timeout = 60)
+    private function runSubTask(SymfonyStyle $io, string $text, string $task, int $timeout = 60): void
     {
         $process = new Process($task, null, null, null, $timeout);
         $process->run();

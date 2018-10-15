@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Oneup\DeveloperConvenienceBundle\Command;
 
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
-use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Process\Exception\ProcessFailedException;
@@ -15,7 +17,7 @@ use Symfony\Component\Yaml\Yaml;
 
 class ImageOptimCommand extends ContainerAwareCommand
 {
-    public function configure()
+    public function configure(): void
     {
         $this
             ->setName('dev:imageoptim')
@@ -24,7 +26,7 @@ class ImageOptimCommand extends ContainerAwareCommand
         ;
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): void
     {
         $io = new SymfonyStyle($input, $output);
 
@@ -59,6 +61,7 @@ class ImageOptimCommand extends ContainerAwareCommand
             ));
 
             $io->newLine();
+
             return;
         }
 
@@ -66,7 +69,7 @@ class ImageOptimCommand extends ContainerAwareCommand
         $io->newLine();
     }
 
-    protected function checkForImagemin(SymfonyStyle $io)
+    protected function checkForImagemin(SymfonyStyle $io): void
     {
         $projectDir = $this->getContainer()->getParameter('kernel.project_dir');
         if (!file_exists($projectDir.'/node_modules/imagemin')) {
@@ -77,18 +80,18 @@ class ImageOptimCommand extends ContainerAwareCommand
         }
     }
 
-    protected function removeTemporaryFolder(array $config, SymfonyStyle $io)
+    protected function removeTemporaryFolder(array $config, SymfonyStyle $io): void
     {
-        $imgOptFolder = $this->getContainer()->getParameter('kernel.project_dir') . '/var/imgOpt';
+        $imgOptFolder = $this->getContainer()->getParameter('kernel.project_dir').'/var/imgOpt';
 
         if (file_exists($imgOptFolder)) {
             $this->runSubTask($io, 'Removed temporary folder.', sprintf('rm -rf %s', $imgOptFolder));
         }
     }
 
-    protected function getFilesFromRemote(array $config, SymfonyStyle $io)
+    protected function getFilesFromRemote(array $config, SymfonyStyle $io): void
     {
-        $imgOptFolder = $this->getContainer()->getParameter('kernel.project_dir') . '/var/imgOpt';
+        $imgOptFolder = $this->getContainer()->getParameter('kernel.project_dir').'/var/imgOpt';
 
         if (file_exists($config['tmp'])) {
             $this->runSubTask($io, 'Removed previous folder.', sprintf('rm -rf %s', $config['tmp']));
@@ -111,7 +114,7 @@ class ImageOptimCommand extends ContainerAwareCommand
         );
     }
 
-    protected function createRemoteBackup(array $config, SymfonyStyle $io)
+    protected function createRemoteBackup(array $config, SymfonyStyle $io): void
     {
         $timestamp = time();
 
@@ -129,7 +132,7 @@ class ImageOptimCommand extends ContainerAwareCommand
         );
     }
 
-    protected function moveNewFilesToRemote($config, $io)
+    protected function moveNewFilesToRemote($config, $io): void
     {
         $this->runSubTask(
             $io,
@@ -144,14 +147,14 @@ class ImageOptimCommand extends ContainerAwareCommand
         );
     }
 
-    protected function optimizeImages(SymfonyStyle $io)
+    protected function optimizeImages(SymfonyStyle $io): void
     {
-        $root = $this->getContainer()->getParameter('kernel.project_dir') . '/var/imgOpt/files';
+        $root = $this->getContainer()->getParameter('kernel.project_dir').'/var/imgOpt/files';
 
         $dirIter = new RecursiveDirectoryIterator($root, RecursiveDirectoryIterator::SKIP_DOTS);
         $iterIter = new RecursiveIteratorIterator($dirIter, RecursiveIteratorIterator::SELF_FIRST, RecursiveIteratorIterator::CATCH_GET_CHILD);
 
-        $paths = array($root);
+        $paths = [$root];
         foreach ($iterIter as $path => $dir) {
             if ($dir->isDir()) {
                 $paths[] = $path;
@@ -167,7 +170,7 @@ class ImageOptimCommand extends ContainerAwareCommand
         foreach ($paths as $pathItem) {
             $this->runSubTask(
                 $io,
-                'Optimize JPEG & PNG images in directory "' . $pathItem . '"',
+                'Optimize JPEG & PNG images in directory "'.$pathItem.'"',
                 sprintf(
                     'node %s/../Resources/dev/app.js "%s" %s %s %s',
                     __DIR__,
@@ -180,7 +183,7 @@ class ImageOptimCommand extends ContainerAwareCommand
         }
     }
 
-    protected function resyncFilesOnRemote(array $config, SymfonyStyle $io)
+    protected function resyncFilesOnRemote(array $config, SymfonyStyle $io): void
     {
         $this->runSubTask(
             $io,
@@ -224,7 +227,7 @@ class ImageOptimCommand extends ContainerAwareCommand
             /** @var array|string $command */
             foreach ($envConfig[$stage] as $command) {
                 $commandName = $command;
-                if (is_array($command)) {
+                if (\is_array($command)) {
                     $commandName = array_keys($command)[0];
                 }
 
@@ -232,7 +235,7 @@ class ImageOptimCommand extends ContainerAwareCommand
                     continue;
                 }
 
-                if (is_array($command) && is_array($command['custom/copy-parameters']) && array_key_exists('env', $command['custom/copy-parameters'])) {
+                if (\is_array($command) && \is_array($command['custom/copy-parameters']) && array_key_exists('env', $command['custom/copy-parameters'])) {
                     $parametersEnv = $command['custom/copy-parameters']['env'];
                     break 2;
                 }
@@ -246,11 +249,11 @@ class ImageOptimCommand extends ContainerAwareCommand
             'user' => $envConfig['user'],
             'directory' => rtrim($envConfig['host_path'], '/'),
             'tmp' => $syncDir,
-            'console' => $console
+            'console' => $console,
         ];
     }
 
-    private function runSubTask(SymfonyStyle $io, string $text, string $task)
+    private function runSubTask(SymfonyStyle $io, string $text, string $task): void
     {
         $process = new Process($task);
         $process->run();

@@ -8,3 +8,13 @@ services:
         class: Oneup\DeveloperConvenienceBundle\Command\SyncProjectCommand
         tags:
             - { name: 'console.command' }
+
+    Contao\InstallationBundle\Database\:
+        autowire: true
+        resource: '../../vendor/contao/installation-bundle/src/Database/Version*'
+        tags:
+        - { name: 'oneup.dca.contao.db_udpate' }
+
+    oneup.dca.contao.db_update_manager:
+        class: 'AppBundle\Database\ContaoDatabaseUpdateManager'
+        public: true
