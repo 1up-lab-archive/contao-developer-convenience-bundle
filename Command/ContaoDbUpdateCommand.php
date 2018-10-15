@@ -21,7 +21,7 @@ class ContaoDbUpdateCommand extends ContainerAwareCommand
         ;
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output): int
+    protected function execute(InputInterface $input, OutputInterface $output): void
     {
         $io = new SymfonyStyle($input, $output);
 
@@ -35,14 +35,6 @@ class ContaoDbUpdateCommand extends ContainerAwareCommand
 
         $updateManager->runUpdates();
 
-        if ('' !== $updateManager->getMessages()) {
-            $io->error($updateManager->getMessages());
-
-            return -1;
-        }
-
         $io->success('Contao database updates successfully excuted.');
-
-        return 0;
     }
 }

@@ -11,10 +11,10 @@ services:
 
     Contao\InstallationBundle\Database\:
         autowire: true
-        resource: '../../vendor/contao/installation-bundle/src/Database/Version*'
+        resource: '../../../../../vendor/contao/installation-bundle/src/Database/Version*'
         tags:
         - { name: 'oneup.dca.contao.db_udpate' }
 
     oneup.dca.contao.db_update_manager:
-        class: 'AppBundle\Database\ContaoDatabaseUpdateManager'
+        class: Oneup\DeveloperConvenienceBundle\Database\ContaoDatabaseUpdateManager
         public: true

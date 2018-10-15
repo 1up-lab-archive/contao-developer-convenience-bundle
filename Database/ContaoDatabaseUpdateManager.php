@@ -9,12 +9,10 @@ use Contao\InstallationBundle\Database\AbstractVersionUpdate;
 class ContaoDatabaseUpdateManager
 {
     protected $updates;
-    protected $messages;
 
     public function __construct()
     {
         $this->updates = [];
-        $this->messages = [];
     }
 
     public function addUpdate(AbstractVersionUpdate $update): void
@@ -29,15 +27,6 @@ class ContaoDatabaseUpdateManager
             if ($update->shouldBeRun()) {
                 $update->run();
             }
-
-            if ($message = $update->getMessage()) {
-                $messages[] = $message;
-            }
         }
-    }
-
-    public function getMessages(): string
-    {
-        return implode('', $this->messages);
     }
 }
