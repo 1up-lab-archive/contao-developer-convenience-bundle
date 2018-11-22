@@ -6,6 +6,7 @@ namespace Oneup\DeveloperConvenienceBundle\Command;
 
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Exception\LogicException;
+use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -53,6 +54,7 @@ class SyncProjectCommand extends ContainerAwareCommand
             $this->prepareSync($config, $io);
             $this->syncFilesystem($config, $io, $timeout);
             $this->syncDatabase($config, $io, $timeout);
+            $this->createSymlinks($output);
         } catch (ProcessFailedException $exception) {
             $io->error(sprintf(
                 "Synchronisation failed after %s seconds.\n\nMessage:\n%s\n\nCommand:\n%s",
@@ -68,6 +70,18 @@ class SyncProjectCommand extends ContainerAwareCommand
 
         $io->success(sprintf('Synchronisation completed in %s seconds.', number_format(microtime(true) - $start, 2)));
         $io->newLine();
+    }
+
+    protected function createSymlinks(OutputInterface $output): void
+    {
+        $command = $this->getApplication()->find('contao:symlinks');
+
+        $input = new ArrayInput([
+            'command' => 'contao:symlinks',
+            'target' => $this->getContainer()->getParameter('contao.web_dir'),
+        ]);
+
+        $command->run($input, $output);
     }
 
     protected function prepareSync(array $config, SymfonyStyle $io): void
