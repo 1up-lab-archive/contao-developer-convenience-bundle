@@ -35,7 +35,7 @@ class SyncProjectCommand extends ContainerAwareCommand
         // Read configuration
         $config = $this->getConfigurationForEnvironment($input->getArgument('environment'));
 
-        $timeout = $input->getArgument('timeout');
+        $timeout = (int) $input->getArgument('timeout');
 
         if (!$io->confirm('Are you sure to synchronise from a remote installation? This will overwrite your local data!', true)) {
             $io->error('Abort synchronisation.');
