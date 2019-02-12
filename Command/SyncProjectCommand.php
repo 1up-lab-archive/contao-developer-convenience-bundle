@@ -9,6 +9,7 @@ use Symfony\Component\Console\Exception\LogicException;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Dotenv\Dotenv;
@@ -25,7 +26,7 @@ class SyncProjectCommand extends ContainerAwareCommand
             ->setDescription('Synchronise Database and Files from a remote installation')
             ->addArgument('environment', InputArgument::REQUIRED, 'Where do you want to synchronise from?')
             ->addArgument('timeout', InputArgument::OPTIONAL, 'What timeout should the commands have?')
-            ->addOption('database-only', 'd', InputArgument::OPTIONAL, 'Only sync database')
+            ->addOption('database-only', null, InputOption::VALUE_OPTIONAL, 'Only sync database?', false)
         ;
     }
 
