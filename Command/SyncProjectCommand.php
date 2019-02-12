@@ -25,6 +25,7 @@ class SyncProjectCommand extends ContainerAwareCommand
             ->setDescription('Synchronise Database and Files from a remote installation')
             ->addArgument('environment', InputArgument::REQUIRED, 'Where do you want to synchronise from?')
             ->addArgument('timeout', InputArgument::OPTIONAL, 'What timeout should the commands have?')
+            ->addOption('database-only', 'd', InputArgument::OPTIONAL, 'Only sync database')
         ;
     }
 
@@ -36,6 +37,7 @@ class SyncProjectCommand extends ContainerAwareCommand
         $config = $this->getConfigurationForEnvironment($input->getArgument('environment'));
 
         $timeout = (int) $input->getArgument('timeout');
+        $databaseOnly = $input->getOption('database-only');
 
         if (!$io->confirm('Are you sure to synchronise from a remote installation? This will overwrite your local data!', true)) {
             $io->error('Abort synchronisation.');
@@ -52,7 +54,11 @@ class SyncProjectCommand extends ContainerAwareCommand
 
         try {
             $this->prepareSync($config, $io);
-            $this->syncFilesystem($config, $io, $timeout);
+
+            if (null !== $databaseOnly) {
+                $this->syncFilesystem($config, $io, $timeout);
+            }
+
             $this->syncDatabase($config, $io, $timeout);
             $this->createSymlinks($output);
         } catch (ProcessFailedException $exception) {
