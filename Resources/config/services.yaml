@@ -1,11 +1,16 @@
 services:
-    oneup.dca.command.image-optim:
+    oneup.dca.command.image_optim:
         class: Oneup\DeveloperConvenienceBundle\Command\ImageOptimCommand
         tags:
             - { name: 'console.command' }
 
-    oneup.dca.command.sync-project:
+    oneup.dca.command.sync_project:
         class: Oneup\DeveloperConvenienceBundle\Command\SyncProjectCommand
+        tags:
+            - { name: 'console.command' }
+
+    oneup.dca.command.contao_db_update:
+        class: Oneup\DeveloperConvenienceBundle\Command\ContaoDbUpdateCommand
         tags:
             - { name: 'console.command' }
 
