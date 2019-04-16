@@ -63,6 +63,12 @@ class ContaoDbUpdateCommand extends ContainerAwareCommand
             'ALTER_DROP' => !$saveMode,
         ];
 
+        if (empty($sqlCommands)) {
+            $io->success('Nothing to update - your database is already in sync with the current entity metadata.');
+
+            return 0;
+        }
+
         $sqls = 0;
 
         foreach ($sqlCommands as $category => $commands) {
