@@ -153,7 +153,7 @@ class SyncProjectCommand extends ContainerAwareCommand
         $file = sprintf('%s/.mage.yml', $projectDir);
         $config = Yaml::parse(file_get_contents($file));
 
-        if (!array_key_exists($environment, $config['magephp']['environments'])) {
+        if (!\array_key_exists($environment, $config['magephp']['environments'])) {
             throw new LogicException('Environment does not exist');
         }
 
@@ -163,7 +163,7 @@ class SyncProjectCommand extends ContainerAwareCommand
         $parametersEnv = 'dev';
 
         foreach (['pre-deploy', 'on-deploy', 'on-release', 'post-release', 'post-deploy'] as $stage) {
-            if (!array_key_exists($stage, $envConfig)) {
+            if (!\array_key_exists($stage, $envConfig)) {
                 continue;
             }
 
@@ -182,12 +182,12 @@ class SyncProjectCommand extends ContainerAwareCommand
                     continue;
                 }
 
-                if (\is_array($command) && \is_array($command['custom/copy-parameters']) && array_key_exists('env', $command['custom/copy-parameters'])) {
+                if (\is_array($command) && \is_array($command['custom/copy-parameters']) && \array_key_exists('env', $command['custom/copy-parameters'])) {
                     $parametersEnv = $command['custom/copy-parameters']['env'];
                     break 2;
                 }
 
-                if (\is_array($command) && \is_array($command['custom/copy-env']) && array_key_exists('env', $command['custom/copy-env'])) {
+                if (\is_array($command) && \is_array($command['custom/copy-env']) && \array_key_exists('env', $command['custom/copy-env'])) {
                     $parametersEnv = $command['custom/copy-env']['env'];
                     break 2;
                 }
