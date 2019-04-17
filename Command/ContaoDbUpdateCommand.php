@@ -89,7 +89,6 @@ class ContaoDbUpdateCommand extends Command
 
         foreach ($sqlCommands as $category => $commands) {
             $translatedCategory = $this->translator->trans($category, [], null, 'en');
-
             $sqls += \count($commands);
 
             if ($dumpSql) {
@@ -130,7 +129,6 @@ class ContaoDbUpdateCommand extends Command
         if ($dumpSql || $force) {
             $installer = $this->getFreshInstaller();
             $sqlCommands = $installer->getCommands();
-
             $startOver = false;
 
             foreach ($sqlCommands as $category => $commands) {
