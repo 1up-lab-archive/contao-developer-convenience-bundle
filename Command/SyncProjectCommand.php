@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Oneup\DeveloperConvenienceBundle\Command;
 
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Exception\LogicException;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputArgument;
@@ -17,8 +17,26 @@ use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Yaml\Yaml;
 
-class SyncProjectCommand extends ContainerAwareCommand
+class SyncProjectCommand extends Command
 {
+    /** @var string */
+    protected $contaoWebDir;
+
+    /** @var string */
+    protected $projectDir;
+
+    /** @var string */
+    protected $rootDir;
+
+    public function __construct(string $contaoWebDir, string $projectDir, string $rootDir, string $name = null)
+    {
+        $this->contaoWebDir = $contaoWebDir;
+        $this->projectDir = $projectDir;
+        $this->rootDir = $rootDir;
+
+        parent::__construct($name);
+    }
+
     public function configure(): void
     {
         $this
@@ -85,7 +103,7 @@ class SyncProjectCommand extends ContainerAwareCommand
 
         $input = new ArrayInput([
             'command' => 'contao:symlinks',
-            'target' => $this->getContainer()->getParameter('contao.web_dir'),
+            'target' => $this->contaoWebDir,
         ]);
 
         $command->run($input, $output);
@@ -147,10 +165,9 @@ class SyncProjectCommand extends ContainerAwareCommand
      */
     private function getConfigurationForEnvironment(string $environment)
     {
-        $projectDir = $this->getContainer()->getParameter('kernel.project_dir');
-        $syncDir = sprintf('%s/var/sync', $projectDir);
+        $syncDir = sprintf('%s/var/sync', $this->projectDir);
 
-        $file = sprintf('%s/.mage.yml', $projectDir);
+        $file = sprintf('%s/.mage.yml', $this->projectDir);
         $config = Yaml::parse(file_get_contents($file));
 
         if (!\array_key_exists($environment, $config['magephp']['environments'])) {
@@ -221,12 +238,10 @@ class SyncProjectCommand extends ContainerAwareCommand
 
     private function getDatabaseConfig($environment, $hasEnvFileSupport)
     {
-        $rootDir = $this->getContainer()->getParameter('kernel.root_dir');
-
         if (!$hasEnvFileSupport) {
             $file = 'local' === $environment ?
-                sprintf('%s/config/parameters.yml', $rootDir) :
-                sprintf('%s/config/parameters.%s.yml.dist', $rootDir, $environment)
+                sprintf('%s/config/parameters.yml', $this->rootDir) :
+                sprintf('%s/config/parameters.%s.yml.dist', $this->rootDir, $environment)
             ;
 
             if (!file_exists($file)) {
@@ -246,8 +261,8 @@ class SyncProjectCommand extends ContainerAwareCommand
 
         // Env-File Support
         $file = 'local' === $environment ?
-            sprintf('%s/../.env', $rootDir) :
-            sprintf('%s/../.env.%s.dist', $rootDir, $environment)
+            sprintf('%s/../.env', $this->rootDir) :
+            sprintf('%s/../.env.%s.dist', $this->rootDir, $environment)
         ;
 
         if (!file_exists($file)) {
@@ -262,7 +277,7 @@ class SyncProjectCommand extends ContainerAwareCommand
         $components = parse_url($url);
 
         $dotenv = new Dotenv();
-        $dotenv->load($rootDir.'/../.env');
+        $dotenv->load($this->rootDir . '/../.env');
 
         return [
             'host' => $components['host'],
@@ -273,7 +288,7 @@ class SyncProjectCommand extends ContainerAwareCommand
         ];
     }
 
-    private function runSubTask(SymfonyStyle $io, string $text, string $task, int $timeout = 60): void
+    private function runSubTask(SymfonyStyle $io, string $text, string $task, float $timeout = 60): void
     {
         $process = new Process($task, null, null, null, $timeout);
         $process->run();

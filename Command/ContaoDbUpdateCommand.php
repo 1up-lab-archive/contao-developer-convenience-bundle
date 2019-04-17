@@ -4,17 +4,41 @@ declare(strict_types=1);
 
 namespace Oneup\DeveloperConvenienceBundle\Command;
 
+use Contao\CoreBundle\Doctrine\Schema\DcaSchemaProvider;
+use Contao\CoreBundle\Translation\Translator;
 use Contao\InstallationBundle\Database\Installer;
+use Doctrine\DBAL\Connection;
 use Oneup\DeveloperConvenienceBundle\Database\ContaoDatabaseUpdateManager;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
-use Symfony\Component\DependencyInjection\Container;
 
-class ContaoDbUpdateCommand extends ContainerAwareCommand
+class ContaoDbUpdateCommand extends Command
 {
+    /** @var Connection */
+    protected $connection;
+
+    /** @var ContaoDatabaseUpdateManager */
+    protected $updateManager;
+
+    /** @var Translator */
+    protected $translator;
+
+    /** @var DcaSchemaProvider */
+    protected $dcaSchemaProvider;
+
+    public function __construct(Connection $connection, ContaoDatabaseUpdateManager $updateManager, Translator $translator, DcaSchemaProvider $dcaSchemaProvider, string $name = null)
+    {
+        $this->connection = $connection;
+        $this->updateManager = $updateManager;
+        $this->translator = $translator;
+        $this->dcaSchemaProvider = $dcaSchemaProvider;
+
+        parent::__construct($name);
+    }
+
     public function configure(): void
     {
         $this
@@ -35,23 +59,15 @@ class ContaoDbUpdateCommand extends ContainerAwareCommand
 
         $io->title('Running Contao database updates');
 
-        /** @var Container $container */
-        $container = $this->getContainer();
-
-        /** @var ContaoDatabaseUpdateManager $updateManager */
-        $updateManager = $container->get('oneup.dca.contao.db_update_manager');
-
         // Run version updates
-        $messages = $updateManager->runUpdates();
+        $messages = $this->updateManager->runUpdates();
 
         if (\count($messages)) {
             $io->block($messages);
         }
 
-        /** @var Installer $installer */
-        $installer = $container->get('contao.installer');
-
         // Get adjusting contao database commands
+        $installer = $this->getFreshInstaller();
         $sqlCommands = $installer->getCommands();
 
         $defaultAnswers = [
@@ -72,10 +88,12 @@ class ContaoDbUpdateCommand extends ContainerAwareCommand
         $sqls = 0;
 
         foreach ($sqlCommands as $category => $commands) {
+            $translatedCategory = $this->translator->trans($category, [], null, 'en');
+
             $sqls += \count($commands);
 
             if ($dumpSql) {
-                $io->text(sprintf('The following SQL %s statements will be executed:', $category));
+                $io->text(sprintf('The following SQL <info>"%s"</info> statements will be executed:', $translatedCategory));
                 $io->newLine();
 
                 foreach ($commands as $command) {
@@ -86,7 +104,7 @@ class ContaoDbUpdateCommand extends ContainerAwareCommand
             }
 
             if ($force) {
-                if (!$io->confirm(sprintf('Do you wanna run the %s statements?', $category), \array_key_exists($category, $defaultAnswers) ? $defaultAnswers[$category] : false)) {
+                if (!$io->confirm(sprintf('Do you wanna run the <info>"%s"</info> statements?', $translatedCategory), \array_key_exists($category, $defaultAnswers) ? $defaultAnswers[$category] : false)) {
                     $io->text('Skipping these statements...');
                     $io->newLine();
                     continue;
@@ -110,6 +128,21 @@ class ContaoDbUpdateCommand extends ContainerAwareCommand
         }
 
         if ($dumpSql || $force) {
+            $installer = $this->getFreshInstaller();
+            $sqlCommands = $installer->getCommands();
+
+            $startOver = false;
+
+            foreach ($sqlCommands as $category => $commands) {
+                if (\array_key_exists($category, $defaultAnswers) && true === $defaultAnswers[$category]) {
+                    $startOver = true;
+                }
+            }
+
+            if (true === $startOver && 0 < \count($sqlCommands)) {
+                return $this->runRecursively($input, $output);
+            }
+
             return 0;
         }
 
@@ -136,5 +169,17 @@ class ContaoDbUpdateCommand extends ContainerAwareCommand
         $io->newLine();
 
         return 1;
+    }
+
+    protected function getFreshInstaller(): Installer
+    {
+        return new Installer($this->connection, $this->dcaSchemaProvider);
+    }
+
+    protected function runRecursively(InputInterface $input, OutputInterface $output): int
+    {
+        $command = $this->getApplication()->find($this->getName());
+
+        return $command->run($input, $output);
     }
 }

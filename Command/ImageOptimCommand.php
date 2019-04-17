@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Oneup\DeveloperConvenienceBundle\Command;
 
+use Contao\CoreBundle\Framework\ContaoFramework;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -15,8 +16,26 @@ use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Yaml\Yaml;
 
-class ImageOptimCommand extends ContainerAwareCommand
+class ImageOptimCommand extends Command
 {
+    /** @var ContaoFramework */
+    protected $contaoFramework;
+
+    /** @var string */
+    protected $projectDir;
+
+    /** @var array */
+    protected $config;
+
+    public function __construct(ContaoFramework $contaoFramework, string $projectDir, array $config, string $name = null)
+    {
+        $this->contaoFramework = $contaoFramework;
+        $this->projectDir = $projectDir;
+        $this->config = $config;
+
+        parent::__construct($name);
+    }
+
     public function configure(): void
     {
         $this
@@ -30,8 +49,7 @@ class ImageOptimCommand extends ContainerAwareCommand
     {
         $io = new SymfonyStyle($input, $output);
 
-        $contaoFramework = $this->getContainer()->get('contao.framework');
-        $contaoFramework->initialize();
+        $this->contaoFramework->initialize();
 
         $config = $this->getConfigurationForEnvironment($input->getArgument('environment'));
 
@@ -71,8 +89,7 @@ class ImageOptimCommand extends ContainerAwareCommand
 
     protected function checkForImagemin(SymfonyStyle $io): void
     {
-        $projectDir = $this->getContainer()->getParameter('kernel.project_dir');
-        if (!file_exists($projectDir.'/node_modules/imagemin')) {
+        if (!file_exists($this->projectDir . '/node_modules/imagemin')) {
             $io->error('Imagemin node-modules not found. Please see readme.md for detailed information.');
             $io->newLine();
 
@@ -82,7 +99,7 @@ class ImageOptimCommand extends ContainerAwareCommand
 
     protected function removeTemporaryFolder(array $config, SymfonyStyle $io): void
     {
-        $imgOptFolder = $this->getContainer()->getParameter('kernel.project_dir').'/var/imgOpt';
+        $imgOptFolder = $this->projectDir . '/var/imgOpt';
 
         if (file_exists($imgOptFolder)) {
             $this->runSubTask($io, 'Removed temporary folder.', sprintf('rm -rf %s', $imgOptFolder));
@@ -91,7 +108,7 @@ class ImageOptimCommand extends ContainerAwareCommand
 
     protected function getFilesFromRemote(array $config, SymfonyStyle $io): void
     {
-        $imgOptFolder = $this->getContainer()->getParameter('kernel.project_dir').'/var/imgOpt';
+        $imgOptFolder = $this->projectDir . '/var/imgOpt';
 
         if (file_exists($config['tmp'])) {
             $this->runSubTask($io, 'Removed previous folder.', sprintf('rm -rf %s', $config['tmp']));
@@ -149,7 +166,7 @@ class ImageOptimCommand extends ContainerAwareCommand
 
     protected function optimizeImages(SymfonyStyle $io): void
     {
-        $root = $this->getContainer()->getParameter('kernel.project_dir').'/var/imgOpt/files';
+        $root = $this->projectDir . '/var/imgOpt/files';
 
         $dirIter = new RecursiveDirectoryIterator($root, RecursiveDirectoryIterator::SKIP_DOTS);
         $iterIter = new RecursiveIteratorIterator($dirIter, RecursiveIteratorIterator::SELF_FIRST, RecursiveIteratorIterator::CATCH_GET_CHILD);
@@ -163,14 +180,13 @@ class ImageOptimCommand extends ContainerAwareCommand
 
         $io->note($paths);
 
-        $configOpt = $this->getContainer()->getParameter('developer_convenience.imageoptim.config');
-        $jpegOpt = $configOpt['imageoptim']['jpeg'];
-        $pngOpt = $configOpt['imageoptim']['png'];
+        $jpegOpt = $this->config['imageoptim']['jpeg'];
+        $pngOpt = $this->config['imageoptim']['png'];
 
         foreach ($paths as $pathItem) {
             $this->runSubTask(
                 $io,
-                'Optimize JPEG & PNG images in directory "'.$pathItem.'"',
+                'Optimize JPEG & PNG images in directory "' . $pathItem . '"',
                 sprintf(
                     'node %s/../Resources/dev/app.js "%s" %s %s %s',
                     __DIR__,
@@ -198,12 +214,11 @@ class ImageOptimCommand extends ContainerAwareCommand
         );
     }
 
-    private function getConfigurationForEnvironment(string $environment)
+    private function getConfigurationForEnvironment(string $environment): array
     {
-        $projectDir = $this->getContainer()->getParameter('kernel.project_dir');
-        $syncDir = sprintf('%s/var/imgOpt/files', $projectDir);
+        $syncDir = sprintf('%s/var/imgOpt/files', $this->projectDir);
 
-        $file = sprintf('%s/.mage.yml', $projectDir);
+        $file = sprintf('%s/.mage.yml', $this->projectDir);
         $config = Yaml::parse(file_get_contents($file));
 
         if (!\array_key_exists($environment, $config['magephp']['environments'])) {

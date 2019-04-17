@@ -1,16 +1,29 @@
 services:
     oneup.dca.command.image_optim:
         class: Oneup\DeveloperConvenienceBundle\Command\ImageOptimCommand
+        arguments:
+            - "@contao.framework"
+            - "%kernel.project_dir%"
+            - "%developer_convenience.imageoptim.config%"
         tags:
             - { name: 'console.command' }
 
     oneup.dca.command.sync_project:
         class: Oneup\DeveloperConvenienceBundle\Command\SyncProjectCommand
+        arguments:
+            - "%contao.web_dir%"
+            - "%kernel.project_dir%"
+            - "%kernel.root_dir%"
         tags:
             - { name: 'console.command' }
 
     oneup.dca.command.contao_db_update:
         class: Oneup\DeveloperConvenienceBundle\Command\ContaoDbUpdateCommand
+        arguments:
+            - "@database_connection"
+            - "@oneup.dca.contao.db_update_manager"
+            - "@translator"
+            - "@contao.doctrine.schema_provider"
         tags:
             - { name: 'console.command' }
 
