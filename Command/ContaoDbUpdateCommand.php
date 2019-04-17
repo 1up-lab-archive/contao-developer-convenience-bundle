@@ -124,9 +124,7 @@ class ContaoDbUpdateCommand extends Command
 
         if ($force) {
             $io->success('Contao database updates successfully excuted.');
-        }
 
-        if ($dumpSql || $force) {
             $installer = $this->getFreshInstaller();
             $sqlCommands = $installer->getCommands();
             $startOver = false;
@@ -140,7 +138,9 @@ class ContaoDbUpdateCommand extends Command
             if (true === $startOver && 0 < \count($sqlCommands)) {
                 return $this->runRecursively($input, $output);
             }
+        }
 
+        if ($dumpSql || $force) {
             return 0;
         }
 
