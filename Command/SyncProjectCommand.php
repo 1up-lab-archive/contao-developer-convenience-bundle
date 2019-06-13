@@ -53,7 +53,7 @@ class SyncProjectCommand extends Command
         $io = new SymfonyStyle($input, $output);
 
         // Read configuration
-        $config = $this->getConfigurationForEnvironment(strval($input->getArgument('environment')));
+        $config = $this->getConfigurationForEnvironment((string)$input->getArgument('environment'));
 
         $timeout = (int) $input->getArgument('timeout');
         $databaseOnly = $input->getOption('database-only');
@@ -233,7 +233,7 @@ class SyncProjectCommand extends Command
 
     private function getDatabaseConfig(string $environment, bool $hasEnvFileSupport)
     {
-        $file = sprintf('%s/../../.env.local', $this->rootDir);
+        $file = sprintf('%s/.env.local', $this->projectDir);
 
         if (file_exists($file)) {
             return $this->getDatabaseConfigFlex($environment);
