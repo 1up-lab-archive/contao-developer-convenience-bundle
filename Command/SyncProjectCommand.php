@@ -53,7 +53,7 @@ class SyncProjectCommand extends Command
         $io = new SymfonyStyle($input, $output);
 
         // Read configuration
-        $config = $this->getConfigurationForEnvironment($input->getArgument('environment'));
+        $config = $this->getConfigurationForEnvironment(strval($input->getArgument('environment')));
 
         $timeout = (int) $input->getArgument('timeout');
         $databaseOnly = $input->getOption('database-only');
@@ -74,7 +74,7 @@ class SyncProjectCommand extends Command
         try {
             $this->prepareSync($config, $io);
 
-            if (null !== $databaseOnly) {
+            if ($databaseOnly) {
                 $this->syncFilesystem($config, $io, $timeout);
             }
 
@@ -158,12 +158,7 @@ class SyncProjectCommand extends Command
         $this->runSubTask($io, 'Clean up temporary files.', sprintf('rm %s/dump.sql', $config['tmp']), $timeout);
     }
 
-    /**
-     * @param string $environment
-     *
-     * @return array
-     */
-    private function getConfigurationForEnvironment(string $environment)
+    private function getConfigurationForEnvironment(string $environment): array
     {
         $syncDir = sprintf('%s/var/sync', $this->projectDir);
 
@@ -227,7 +222,7 @@ class SyncProjectCommand extends Command
         ];
     }
 
-    private function hasEnvFileSupport($env = 'local')
+    private function hasEnvFileSupport(string $env = 'local'): bool
     {
         if ('local' === $env) {
             return file_exists('.env');
@@ -236,29 +231,23 @@ class SyncProjectCommand extends Command
         return file_exists(sprintf('.env.%s.dist', $env));
     }
 
-    private function getDatabaseConfig($environment, $hasEnvFileSupport)
+    private function getDatabaseConfig(string $environment, bool $hasEnvFileSupport)
     {
-        if (!$hasEnvFileSupport) {
-            $file = 'local' === $environment ?
-                sprintf('%s/config/parameters.yml', $this->rootDir) :
-                sprintf('%s/config/parameters.%s.yml.dist', $this->rootDir, $environment)
-            ;
+        $file = sprintf('%s/../../.env.local', $this->rootDir);
 
-            if (!file_exists($file)) {
-                throw new LogicException(sprintf('No parameters file for environment "%s" found.', $environment));
-            }
-
-            $config = Yaml::parse(file_get_contents($file));
-
-            return [
-                'host' => $config['parameters']['database_host'],
-                'user' => $config['parameters']['database_user'],
-                'pass' => $config['parameters']['database_password'],
-                'port' => $config['parameters']['database_port'],
-                'name' => $config['parameters']['database_name'],
-            ];
+        if (file_exists($file)) {
+            return $this->getDatabaseConfigFlex($environment);
         }
 
+        if ($this->hasEnvFileSupport($environment)) {
+            return $this->getDatabaseConfigEnv($environment);
+        }
+
+        return $this->getDatabaseConfigDefault($environment);
+    }
+
+    private function getDatabaseConfigEnv(string $environment): array
+    {
         // Env-File Support
         $file = 'local' === $environment ?
             sprintf('%s/../.env', $this->rootDir) :
@@ -269,15 +258,51 @@ class SyncProjectCommand extends Command
             throw new LogicException(sprintf('No .env file for environment "%s" found.', $environment));
         }
 
+        return $this->parseDatabaseEnv($file);
+    }
+
+    private function getDatabaseConfigFlex(string $environment): array
+    {
+        $file = 'local' === $environment ?
+            sprintf('%s/.env.%s', $this->projectDir,$environment):
+            sprintf('%s/config/hosts/.env.%s.dist', $this->projectDir,$environment);
+
+        if (!file_exists($file)) {
+            throw new LogicException(sprintf('File %s not found', $file));
+        }
+
+        return $this->parseDatabaseEnv($file);
+    }
+
+    private function getDatabaseConfigDefault(string $environment): array
+    {
+        $file = 'local' === $environment ?
+            sprintf('%s/config/parameters.yml', $this->rootDir) :
+            sprintf('%s/config/parameters.%s.yml.dist', $this->rootDir, $environment)
+        ;
+
+        if (!file_exists($file)) {
+            throw new LogicException(sprintf('No parameters file for environment "%s" found.', $environment));
+        }
+
+        $config = Yaml::parse(file_get_contents($file));
+
+        return [
+            'host' => $config['parameters']['database_host'],
+            'user' => $config['parameters']['database_user'],
+            'pass' => $config['parameters']['database_password'],
+            'port' => $config['parameters']['database_port'],
+            'name' => $config['parameters']['database_name'],
+        ];
+    }
+
+    private function parseDatabaseEnv(string $envFile): array
+    {
         $dotenv = new Dotenv();
-        $dotenv->load($file);
+        $dotenv->load($envFile);
 
         $url = getenv('DATABASE_URL');
-
         $components = parse_url($url);
-
-        $dotenv = new Dotenv();
-        $dotenv->load($this->rootDir . '/../.env');
 
         return [
             'host' => $components['host'],
