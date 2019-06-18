@@ -74,7 +74,7 @@ class SyncProjectCommand extends Command
         try {
             $this->prepareSync($config, $io);
 
-            if ($databaseOnly) {
+            if (!$databaseOnly) {
                 $this->syncFilesystem($config, $io, $timeout);
             }
 
