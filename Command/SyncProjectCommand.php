@@ -56,7 +56,7 @@ class SyncProjectCommand extends Command
         $config = $this->getConfigurationForEnvironment((string)$input->getArgument('environment'));
 
         $timeout = (int) $input->getArgument('timeout');
-        $databaseOnly = $input->getOption('database-only');
+        $databaseOnly = (bool) $input->getOption('database-only');
 
         if (!$io->confirm('Are you sure to synchronise from a remote installation? This will overwrite your local data!', true)) {
             $io->error('Abort synchronisation.');
@@ -74,7 +74,7 @@ class SyncProjectCommand extends Command
         try {
             $this->prepareSync($config, $io);
 
-            if (!$databaseOnly) {
+            if (false === $databaseOnly) {
                 $this->syncFilesystem($config, $io, $timeout);
             }
 
