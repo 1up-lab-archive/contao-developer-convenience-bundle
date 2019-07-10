@@ -250,8 +250,8 @@ class SyncProjectCommand extends Command
     {
         // Env-File Support
         $file = 'local' === $environment ?
-            sprintf('%s/../.env', $this->projectDir) :
-            sprintf('%s/../.env.%s.dist', $this->projectDir, $environment)
+            sprintf('%s/.env', $this->projectDir) :
+            sprintf('%s/.env.%s.dist', $this->projectDir, $environment)
         ;
 
         if (!file_exists($file)) {
