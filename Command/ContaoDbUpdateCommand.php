@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Oneup\DeveloperConvenienceBundle\Command;
 
 use Contao\CoreBundle\Doctrine\Schema\DcaSchemaProvider;
-use Contao\CoreBundle\Translation\Translator;
 use Contao\InstallationBundle\Database\Installer;
 use Doctrine\DBAL\Connection;
 use Oneup\DeveloperConvenienceBundle\Database\ContaoDatabaseUpdateManager;
@@ -14,6 +13,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 class ContaoDbUpdateCommand extends Command
 {
@@ -23,13 +23,13 @@ class ContaoDbUpdateCommand extends Command
     /** @var ContaoDatabaseUpdateManager */
     protected $updateManager;
 
-    /** @var Translator */
+    /** @var TranslatorInterface */
     protected $translator;
 
     /** @var DcaSchemaProvider */
     protected $dcaSchemaProvider;
 
-    public function __construct(Connection $connection, ContaoDatabaseUpdateManager $updateManager, Translator $translator, DcaSchemaProvider $dcaSchemaProvider, string $name = null)
+    public function __construct(Connection $connection, ContaoDatabaseUpdateManager $updateManager, TranslatorInterface $translator, DcaSchemaProvider $dcaSchemaProvider, string $name = null)
     {
         $this->connection = $connection;
         $this->updateManager = $updateManager;

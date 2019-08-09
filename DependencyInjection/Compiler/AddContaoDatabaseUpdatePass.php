@@ -20,6 +20,10 @@ class AddContaoDatabaseUpdatePass implements CompilerPassInterface
         $updates = $container->findTaggedServiceIds('oneup.dca.contao.db_udpate');
 
         foreach ($updates as $id => $tags) {
+            // inject container (AbstractVersionUpdate has ContainerAwareInterface)
+            $update = $container->findDefinition($id);
+            $update->addMethodCall('setContainer', [new Reference('service_container')]);
+
             $definition->addMethodCall('addUpdate', [
                 new Reference($id),
             ]);
