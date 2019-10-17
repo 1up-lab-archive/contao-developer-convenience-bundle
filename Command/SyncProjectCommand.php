@@ -25,14 +25,10 @@ class SyncProjectCommand extends Command
     /** @var string */
     protected $projectDir;
 
-    /** @var string */
-    protected $rootDir;
-
-    public function __construct(string $contaoWebDir, string $projectDir, string $rootDir, string $name = null)
+    public function __construct(string $contaoWebDir, string $projectDir, string $name = null)
     {
         $this->contaoWebDir = $contaoWebDir;
         $this->projectDir = $projectDir;
-        $this->rootDir = $rootDir;
 
         parent::__construct($name);
     }
@@ -53,7 +49,7 @@ class SyncProjectCommand extends Command
         $io = new SymfonyStyle($input, $output);
 
         // Read configuration
-        $config = $this->getConfigurationForEnvironment((string)$input->getArgument('environment'));
+        $config = $this->getConfigurationForEnvironment((string) $input->getArgument('environment'));
 
         $timeout = (int) $input->getArgument('timeout');
         $databaseOnly = (bool) $input->getOption('database-only');
@@ -190,7 +186,7 @@ class SyncProjectCommand extends Command
                     $commandName = array_keys($command)[0];
                 }
 
-                if ('custom/copy-parameters' !== $commandName && 'custom/copy-env' !== $commandName) {
+                if ('custom/copy-parameters' !== $commandName && 'custom/copy-env' !== $commandName && 'custom/copy-config' !== $commandName) {
                     continue;
                 }
 
@@ -204,11 +200,14 @@ class SyncProjectCommand extends Command
                     break 2;
                 }
 
+                if (\is_array($command) && \is_array($command['custom/copy-config']) && \array_key_exists('env', $command['custom/copy-config'])) {
+                    $parametersEnv = $command['custom/copy-config']['env'];
+                    break 2;
+                }
+
                 break 2;
             }
         }
-
-        $dbConfig = $this->getDatabaseConfig($parametersEnv, $this->hasEnvFileSupport($parametersEnv));
 
         return [
             'host' => $envConfig['hosts'][0],
@@ -216,8 +215,8 @@ class SyncProjectCommand extends Command
             'directory' => rtrim($envConfig['host_path'], '/'),
             'tmp' => $syncDir,
             'db' => [
-                'remote' => $this->getDatabaseConfig($parametersEnv, $this->hasEnvFileSupport($parametersEnv)),
-                'local' => $this->getDatabaseConfig('local', $this->hasEnvFileSupport('local')),
+                'remote' => $this->getDatabaseConfig($parametersEnv),
+                'local' => $this->getDatabaseConfig('local'),
             ],
         ];
     }
@@ -231,7 +230,16 @@ class SyncProjectCommand extends Command
         return file_exists(sprintf('.env.%s.dist', $env));
     }
 
-    private function getDatabaseConfig(string $environment, bool $hasEnvFileSupport)
+    private function hasHostsConfigSupport(string $env = 'local'): bool
+    {
+        if ('local' === $env) {
+            return file_exists(sprintf('%s/config/config.local.yaml', $this->projectDir));
+        }
+
+        return file_exists(sprintf('%s/config/hosts/config.%s.yaml', $this->projectDir, $env));
+    }
+
+    private function getDatabaseConfig(string $environment): array
     {
         $file = sprintf('%s/.env.local', $this->projectDir);
 
@@ -241,6 +249,10 @@ class SyncProjectCommand extends Command
 
         if ($this->hasEnvFileSupport($environment)) {
             return $this->getDatabaseConfigEnv($environment);
+        }
+
+        if ($this->hasHostsConfigSupport($environment)) {
+            return $this->getDatabaseConfigHosts($environment);
         }
 
         return $this->getDatabaseConfigDefault($environment);
@@ -264,8 +276,8 @@ class SyncProjectCommand extends Command
     private function getDatabaseConfigFlex(string $environment): array
     {
         $file = 'local' === $environment ?
-            sprintf('%s/.env.%s', $this->projectDir,$environment):
-            sprintf('%s/config/hosts/.env.%s.dist', $this->projectDir,$environment);
+            sprintf('%s/.env.%s', $this->projectDir, $environment) :
+            sprintf('%s/config/hosts/.env.%s.dist', $this->projectDir, $environment);
 
         if (!file_exists($file)) {
             throw new LogicException(sprintf('File %s not found', $file));
@@ -274,25 +286,55 @@ class SyncProjectCommand extends Command
         return $this->parseDatabaseEnv($file);
     }
 
+    private function getDatabaseConfigHosts(string $environment): array
+    {
+        $file = 'local' === $environment ?
+            sprintf('%s/config/config.local.yaml', $this->projectDir) :
+            sprintf('%s/config/hosts/config.%s.yaml', $this->projectDir, $environment)
+        ;
+
+        return $this->parseConfigYaml($file, $environment);
+    }
+
     private function getDatabaseConfigDefault(string $environment): array
     {
         $file = 'local' === $environment ?
-            sprintf('%s/config/parameters.yml', $this->rootDir) :
-            sprintf('%s/config/parameters.%s.yml.dist', $this->rootDir, $environment)
+            sprintf('%s/config/parameters.yml', $this->projectDir) :
+            sprintf('%s/config/parameters.%s.yml.dist', $this->projectDir, $environment)
         ;
 
-        if (!file_exists($file)) {
+        return $this->parseConfigYaml($file, $environment);
+    }
+
+    private function parseConfigYaml(string $configFile, string $environment): array
+    {
+        if (!file_exists($configFile)) {
             throw new LogicException(sprintf('No parameters file for environment "%s" found.', $environment));
         }
 
-        $config = Yaml::parse(file_get_contents($file));
+        $baseConfigFile = sprintf('%s/config/config.yaml', $this->projectDir);
+
+        if (!file_exists($baseConfigFile)) {
+            $baseConfigFile = sprintf('%s/config/config.yml', $this->projectDir);
+        }
+
+        $baseConfig = ['parameters' => []];
+
+        if (file_exists($baseConfigFile)) {
+            $baseConfig = Yaml::parse(file_get_contents($baseConfigFile));
+        }
+
+        $config = Yaml::parse(file_get_contents($configFile));
+
+        $parameters = $config['parameters'];
+        $parameters += $baseConfig['parameters'];
 
         return [
-            'host' => $config['parameters']['database_host'],
-            'user' => $config['parameters']['database_user'],
-            'pass' => $config['parameters']['database_password'],
-            'port' => $config['parameters']['database_port'],
-            'name' => $config['parameters']['database_name'],
+            'host' => $parameters['database_host'],
+            'user' => $parameters['database_user'],
+            'pass' => $parameters['database_password'],
+            'port' => $parameters['database_port'],
+            'name' => $parameters['database_name'],
         ];
     }
 
