@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Oneup\DeveloperConvenienceBundle\Command;
 
 use Contao\CoreBundle\Doctrine\Schema\DcaSchemaProvider;
+use Contao\CoreBundle\Migration\MigrationResult;
 use Contao\InstallationBundle\Database\Installer;
 use Doctrine\DBAL\Connection;
 use Oneup\DeveloperConvenienceBundle\Database\ContaoDatabaseUpdateManager;
@@ -60,9 +61,15 @@ class ContaoDbUpdateCommand extends Command
         $io->title('Running Contao database updates');
 
         // Run version updates
-        $messages = $this->updateManager->runUpdates();
+        $migrationResults = $this->updateManager->runMigrations();
 
-        if (\count($messages)) {
+        if (\count($migrationResults)) {
+            $messages = [];
+            /** @var MigrationResult $migrationResult */
+            foreach ($migrationResults as $migrationResult) {
+                $messages[] = $migrationResult->getMessage();
+            }
+
             $io->block($messages);
         }
 

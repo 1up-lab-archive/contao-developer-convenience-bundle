@@ -4,37 +4,33 @@ declare(strict_types=1);
 
 namespace Oneup\DeveloperConvenienceBundle\Database;
 
-use Contao\InstallationBundle\Database\AbstractVersionUpdate;
+use Contao\CoreBundle\Migration\AbstractMigration;
 
 class ContaoDatabaseUpdateManager
 {
-    protected $updates;
+    protected $migrations;
 
     public function __construct()
     {
-        $this->updates = [];
+        $this->migrations = [];
     }
 
-    public function addUpdate(AbstractVersionUpdate $update): void
+    public function addMigration(AbstractMigration $migration): void
     {
-        $this->updates[] = $update;
+        $this->migrations[] = $migration;
     }
 
-    public function runUpdates(): array
+    public function runMigrations(): array
     {
-        $messages = [];
+        $results = [];
 
-        /** @var AbstractVersionUpdate $update */
-        foreach ($this->updates as $update) {
-            if ($update->shouldBeRun()) {
-                $update->run();
-            }
-
-            if ($message = $update->getMessage()) {
-                $messages[] = $message;
+        /** @var AbstractMigration $migration */
+        foreach ($this->migrations as $migration) {
+            if ($migration->shouldRun()) {
+                $results[] = $migration->run();
             }
         }
 
-        return $messages;
+        return $results;
     }
 }

@@ -1,4 +1,9 @@
 services:
+    _defaults:
+        bind:
+            $projectDir: '%kernel.project_dir%'
+            $uploadPath: '%contao.upload_path%'
+
     oneup.dca.command.image_optim:
         class: Oneup\DeveloperConvenienceBundle\Command\ImageOptimCommand
         arguments:
@@ -31,7 +36,7 @@ services:
         autowire: true
         resource: '../../../../../vendor/contao/installation-bundle/src/Database/Version*'
         tags:
-        - { name: 'oneup.dca.contao.db_udpate' }
+            - { name: 'oneup.dca.contao.db_udpate' }
 
     oneup.dca.contao.db_update_manager:
         class: Oneup\DeveloperConvenienceBundle\Database\ContaoDatabaseUpdateManager
