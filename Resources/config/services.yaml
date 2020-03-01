@@ -1,9 +1,4 @@
 services:
-    _defaults:
-        bind:
-            $projectDir: '%kernel.project_dir%'
-            $uploadPath: '%contao.upload_path%'
-
     oneup.dca.command.image_optim:
         class: Oneup\DeveloperConvenienceBundle\Command\ImageOptimCommand
         arguments:
