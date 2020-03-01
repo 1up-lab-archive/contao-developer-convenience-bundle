@@ -7,11 +7,6 @@ Currently included commands:
    Synchronise Database and Files from a remote installation
 2. `dev:imageoptim <environment>`
 
-   This command optimizes all JPEG and PNG images within the files directory of a remote installation
-3. `dev:contao:db-update`
-
-    Runs contao database updates (version updates and all others)
-
 Requirements
 -------------
 This bundle needs a working [mage](https://github.com/1up-lab/Magallanes) configuration  (`mage.yml`)
