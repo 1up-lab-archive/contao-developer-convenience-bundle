@@ -23,10 +23,10 @@ Add them in your `package.json` file as shown below.
     
     "dependencies": {
         [...]
-        "imagemin": "^5.3.1",
-        "imagemin-guetzli": "^1.0.0",
-        "imagemin-mozjpeg": "^6.0.0",
-        "imagemin-pngquant": "^5.0.1"
+        "imagemin": "^7.0.1",
+        "imagemin-guetzli": "^3.0.0",
+        "imagemin-mozjpeg": "^9.0.0",
+        "imagemin-pngquant": "^9.0.0",
     [...]
 ```
 Configuration
