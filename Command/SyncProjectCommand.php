@@ -190,17 +190,17 @@ class SyncProjectCommand extends Command
                     continue;
                 }
 
-                if (\is_array($command) && \is_array($command['custom/copy-parameters']) && \array_key_exists('env', $command['custom/copy-parameters'])) {
+                if (\is_array($command) && \array_key_exists('custom/copy-parameters', $command) && \is_array($command['custom/copy-parameters']) && \array_key_exists('env', $command['custom/copy-parameters'])) {
                     $parametersEnv = $command['custom/copy-parameters']['env'];
                     break 2;
                 }
 
-                if (\is_array($command) && \is_array($command['custom/copy-env']) && \array_key_exists('env', $command['custom/copy-env'])) {
+                if (\is_array($command) && \array_key_exists('custom/copy-env', $command) && \is_array($command['custom/copy-env']) && \array_key_exists('env', $command['custom/copy-env'])) {
                     $parametersEnv = $command['custom/copy-env']['env'];
                     break 2;
                 }
 
-                if (\is_array($command) && \is_array($command['custom/copy-config']) && \array_key_exists('env', $command['custom/copy-config'])) {
+                if (\is_array($command) && \array_key_exists('custom/copy-config', $command) && \is_array($command['custom/copy-config']) && \array_key_exists('env', $command['custom/copy-config'])) {
                     $parametersEnv = $command['custom/copy-config']['env'];
                     break 2;
                 }
@@ -349,7 +349,7 @@ class SyncProjectCommand extends Command
         return [
             'host' => $components['host'],
             'user' => $components['user'],
-            'pass' => $components['pass'],
+            'pass' => \array_key_exists('pass', $components) ? $components['pass'] : null,
             'port' => $components['port'],
             'name' => ltrim($components['path'], '/'),
         ];
